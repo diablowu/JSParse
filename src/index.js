@@ -1,7 +1,7 @@
 'use strict'
 
-var CalcNode = require('./CalcNode')
-var operators = require('./operators')
+let CalcNode = require('./CalcNode')
+let operators = require('./operators')
 
 
 
@@ -28,14 +28,12 @@ const NULL_AS_TRUE = true;
 
 
 
-
-
-/************************************************************************************/
-// 表达式分析与计算
-
-// 改变引号状态
+/**
+ * 改变引号状态,1表示引号开始 0表示引号结束
+ * @param  {number} qtStep
+ * @return {number}
+ */
 function changeQuoteStat(qtStep) {
-  // 1表示引号开始 0表示引号结束
   if (qtStep == 1) {
     return 0;
   } else {
@@ -43,7 +41,13 @@ function changeQuoteStat(qtStep) {
   }
 }
 
-// 从数组中截取数组
+/**
+ * 从数组中截取数组
+ * @param  {Array} expArray - an array
+ * @param  {Number} startIdx - start index
+ * @param  {Number} len - length of sliced array
+ * @return {Array} new array
+ */
 function genArrayFromArray(expArray, startIdx, len) {
   var tmpArray = [];
   var i;
@@ -54,13 +58,18 @@ function genArrayFromArray(expArray, startIdx, len) {
   return tmpArray;
 }
 
-// 尝试从输入对象中获取输入值（属性值）
+/**
+ * 尝试从输入对象中获取输入值（属性值）
+ * @param  {Object} inputObj 
+ * @param  {string} propName - 属性名
+ * @return {Object}
+ */
 function tryGetEleValue(inputObj, propName) {
   var keyFirstChar = propName.substr(0, 1);
 
   // 如果是字符串，直接返回本身
-  if (keyFirstChar == GlobalObjs.quote ||
-    keyFirstChar == GlobalObjs.singleQuote) {
+  if (keyFirstChar == operators.charmap.quote ||
+    keyFirstChar == operators.charmap.singleQuote) {
     return propName.replace(/^"*|"*$/g, "").replace(/^'*|'*$/g, "");
   }
 
@@ -82,7 +91,11 @@ function tryGetEleValue(inputObj, propName) {
   return inputObj[propName];
 }
 
-// 查找元素数组中的冒号
+/**
+ * 查找元素数组中的冒号
+ * @param  {Array}
+ * @return {number} 位置
+ */
 function findIFELSEColon(expArray) {
   var i;
   for (i = 0; i < expArray.length; i += 1) {
@@ -93,7 +106,11 @@ function findIFELSEColon(expArray) {
   return -1;
 }
 
-// 找到字符串中第一个左括号
+/**
+ * 找到字符串中第一个左括号
+ * @param  {Array}
+ * @return {number}
+ */
 function findBKStart(expTmp) {
   var bkStart = -1;
   var qtStep = 0;
@@ -103,15 +120,15 @@ function findBKStart(expTmp) {
 
   while (cIdx < expTmp.length) {
     c = expTmp.substr(cIdx, 1);
-    if (c == GlobalObjs.quote) {
+    if (c == operators.charmap.quote) {
       qtStep = changeQuoteStat(qtStep);
     }
 
-    if (c == GlobalObjs.singleQuote) {
+    if (c == operators.charmap.singleQuote) {
       sqtStep = changeQuoteStat(sqtStep);
     }
 
-    if (c == GlobalObjs.leftBracket && qtStep == 0 && sqtStep == 0) {
+    if (c == operators.charmap.leftBracket && qtStep == 0 && sqtStep == 0) {
       bkStart = cIdx;
       return bkStart;
     }
@@ -121,7 +138,12 @@ function findBKStart(expTmp) {
   return bkStart;
 }
 
-// 找到当前左括号对应的右括号
+/**
+ * 找到当前左括号对应的右括号
+ * @param  {Array}
+ * @param  {number} bkStartIdx - 起始位置
+ * @return {number}
+ */
 function findBKEnd(expTmp, bkStartIdx) {
   var bkEnd = bkStartIdx;
   var qtStep = 0;
@@ -138,17 +160,17 @@ function findBKEnd(expTmp, bkStartIdx) {
 
     c = expTmp.substr(bkEnd, 1);
 
-    if (c == GlobalObjs.quote) {
+    if (c == operators.charmap.quote) {
       qtStep = changeQuoteStat(qtStep);
     }
-    if (c == GlobalObjs.singleQuote) {
+    if (c == operators.charmap.singleQuote) {
       sqtStep = changeQuoteStat(sqtStep);
     }
 
-    if (c == GlobalObjs.leftBracket && qtStep == 0 && sqtStep == 0) {
+    if (c == operators.charmap.leftBracket && qtStep == 0 && sqtStep == 0) {
       bkStep++;
     }
-    if (c == GlobalObjs.rightBracket && qtStep == 0 && sqtStep == 0) {
+    if (c == operators.charmap.rightBracket && qtStep == 0 && sqtStep == 0) {
       bkStep--;
     }
 
@@ -168,7 +190,11 @@ function findBKEnd(expTmp, bkStartIdx) {
   return bkEnd;
 }
 
-// 自定义函数参数分析
+/**
+ * 自定义函数参数分析
+ * @param  {object}
+ * @return {object}
+ */
 function funcParamsAnalyze(params) {
   var arParam = [];
   var paramNextCharIdx = 0;
@@ -183,21 +209,21 @@ function funcParamsAnalyze(params) {
   // 如果是表达式或者仍为自定义函数，则不在此继续分析，整体放入数组。
   while (paramNextCharIdx < params.length) {
     paramChar = params.substr(paramNextCharIdx, 1);
-    if (paramChar == GlobalObjs.quote) {
+    if (paramChar == operators.charmap.quote) {
       qtStep = changeQuoteStat(qtStep);
     }
-    if (paramChar == GlobalObjs.singleQuote) {
+    if (paramChar == operators.charmap.singleQuote) {
       sqtStep = changeQuoteStat(sqtStep);
     }
 
-    if (paramChar == GlobalObjs.leftBracket && qtStep == 0 && sqtStep == 0) {
+    if (paramChar == operators.charmap.leftBracket && qtStep == 0 && sqtStep == 0) {
       bkStep++;
     }
-    if (paramChar == GlobalObjs.rightBracket && qtStep == 0 && sqtStep == 0) {
+    if (paramChar == operators.charmap.rightBracket && qtStep == 0 && sqtStep == 0) {
       bkStep--;
     }
 
-    if (paramChar == GlobalObjs.comma &&
+    if (paramChar == operators.charmap.comma &&
       qtStep == 0 && sqtStep == 0 && bkStep == 0) {
       // 将逗号之前的部分取出
       paramPart = params.substr(paramNextSubStart, paramNextCharIdx - paramNextSubStart);
@@ -219,15 +245,20 @@ function funcParamsAnalyze(params) {
   return arParam;
 }
 
-// 判断表达式中的“-”是减号还是负号
+/**
+ * 判断表达式中的“-”是减号还是负号
+ * @param  {Array}
+ * @param  {number}
+ * @return {object}
+ */
 function judgeNGorMINUS(expArray, i) {
   // 判断在该表达式元素中“-”为负号还是减号
   if (i == -1 ||
-    expArray[i] == GlobalObjs.leftBracket ||
+    expArray[i] == operators.charmap.leftBracket ||
     isLikeOperator(expArray[i], 0)) {
     return getOperatorByName("NG");
   }
-  if (expArray[i] == GlobalObjs.space) {
+  if (expArray[i] == operators.charmap.space) {
     judgeNGorMINUS(expArray, i - 1);
   } else {
     return getOperatorByName("MINUS");

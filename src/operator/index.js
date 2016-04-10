@@ -186,7 +186,7 @@ let operators = [
     }
 ];
 
-exports.charmap = {
+let _charmap = {
   // 左括号
   "leftBracket": "(",
 
@@ -212,6 +212,13 @@ exports.charmap = {
   "colon": ":"
 
 }
+
+Object.defineProperty(exports, 'charmap', {
+  value: _charmap,
+  enumerable: true,
+  writable: false,
+  configurable: false
+})
 
 
 /**
